@@ -1,0 +1,38 @@
+<script type="text/javascript" src="jquery-1.6.2.min.js"></script>
+<script type="text/javascript" src="jquery.sjtp.min.js"></script>
+<script type="text/javascript">
+	$(function() {
+		if(!$('#ctn').render($('#tmpl'), {title:'Cool~', test:123, lst:['cat', 'dog']})) alert('oops')
+	});
+</script>
+
+<div id="ctn"></div>
+<script type="text/x-sjtp" id='tmpl'>
+	<<~/*
+	语法支持：(此处用{}表示定界符，目前不支持定界符内任何位置出现定界符)	
+		{if exp}A{else}B{/if}判断
+		{loop OBJ key value}{/loop}循环，循环体内key和value分别为当前项目的key和value，key可省略（默认为k），等价于for...in循环
+		{:exp}输出表达式
+		{~statement}执行JS语句，允许多行允许注释，另外有如下预定义变量
+			var echo = function(x) 输出x  {~echo(x)}等价于{:x}
+			var $container = jQuery(container) 容器的jQuery对象
+			var htm  = [] 模板输出缓冲区
+			另外注意执行的时间是正在渲染模板、容器内部即将被.html()写入的时间
+			对$container内容的操作会被模板输出覆盖，必要时可以用setTimeout
+	*/>>
+	<div>
+		<h1><<:title>></h1>
+		IF tag:<b><<if test>>ok<</if>></b>
+		<ul>
+		<<loop lst v>>
+			<li><<:k>>:<<:v>></li>
+		<</loop>>
+		</ul>
+		<h2>空格字符原样输出</h2>
+		<pre>		tab2
+			tab3
+			tab3
+		</pre>
+	</div>
+	<<~$container.css('background', '#CCC')>>
+</script>
