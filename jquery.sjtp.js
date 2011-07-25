@@ -25,7 +25,7 @@
 			option = $.extend({
 				//默认定界符为<< >>
 				tagRE: /(<<([\s\S]+?)>>)/
-			}, option);
+			}, option||{});
 
 			if('string' !== typeof templateCode) {
 				templateCode = $(templateCode).html();
@@ -118,7 +118,7 @@
 						return false;
 					}//switch
 				} else {//literal
-					codes.push('echo("'+token.replace('"', '\\"').replace('\\', '\\\\').replace(/[\r\n]/g, '\\n')+'");');
+					codes.push('echo("'+token.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n]/g, '\\n')+'");');
 				}
 			}//while
 			codes.push('}return htm.join("");');
