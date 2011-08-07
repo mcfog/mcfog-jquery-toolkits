@@ -3,7 +3,7 @@
  * @author McFog <wxyuan90@gmail.com>
  * @license MIT License
  */
-(function($) {
+;(function($) {
 
 	/* Cross-Browser Split 1.0.1
 	(c) Steven Levithan <stevenlevithan.com>; MIT License
@@ -14,6 +14,8 @@
 		/**
 		 * jQuery接口
 		 * 解析并根据context渲染模板后置入当前jQuery对象内
+		 * $container.render(...)
+		 * $.SJTP.render.call($container, ...)
 		 * @param  mixed  templateCode 模板代码，可以是字符串或者DOM对象或者jQuery对象 
 		 * @param  object context      上下文对象，其中的属性可以在模板内直接访问
 		 * @param  object option       选项
@@ -21,21 +23,45 @@
 		 */
 		'render':function(templateCode, context, option)
 		{
-			var $container = this;
+			var $container = SJTP._$(this);
+			return $container.html(SJTP.make.call(templateCode, context, $container, option||{}));
+		},
+
+		/**
+		 * 渲染模板获得产生的HTML代码
+		 * $template.make(...)
+		 * $.SJTP.make.call('template', ...)
+		 * @return mixed  渲染失败返回false，否则返回产生的HTML代码
+		 */
+		'make':function(context, $container, option)
+		{
+			if('undefined' == typeof $container) $container = $(document.body);
+			var fn = SJTP.parse(this, option||{});
+			if(false == fn) return false;
+			try
+			{
+				var rst = fn.call($container, context);
+			} catch(e) {
+				SJTP.log('template make error.');
+				SJTP.log(e);
+			}
+			return rst ? rst : false;
+		},
+
+		/**
+		 * 解析模板产生Function
+		 * @return function
+		 */
+		'parse':function(templateCode, option)
+		{
+			if('string' !== typeof templateCode) {
+				templateCode = $(templateCode).html();
+			}
+			
 			option = $.extend({
 				//默认定界符为<< >>
 				tagRE: /(<<([\s\S]+?)>>)/
 			}, option||{});
-
-			if('string' !== typeof templateCode) {
-				templateCode = $(templateCode).html();
-			}
-
-			return $container.html(SJTP.parse(templateCode, option).call($container, context));
-		},
-
-		'parse':function(templateCode, option)
-		{
 			var tokens = templateCode.split(option.tagRE);
 			var codes = ['var $container=this,htm=[],echo=function(){htm.push.apply(htm, arguments)};with(context){'];
 			var _if = 0, _loop = 0, curTag = [];//记录当前标签和各标签嵌套深度
@@ -59,7 +85,8 @@
 						continue;
 					}
 
-					var tk = /^\s*?([\/\w]+)(?:\s+(.*))?$/g.exec(token);
+					var re = new RegExp('^\\s*?([/\\w]+)(?:\\s+(.*))?$', 'g');
+					var tk = re.exec(token);
 					switch(tk[1])
 					{
 					case 'if':
@@ -123,8 +150,37 @@
 			}//while
 			codes.push('}return htm.join("");');
 
-			return new Function('context', codes.join(''));
+			try
+			{
+				return new Function('context', codes.join(''));
+			} catch(e) {
+				SJTP.log('template parse error.');
+				SJTP.log(codes.join(''));
+				return false;
+			}
+		},
+		'log':function(msg)
+		{
+			if('undefined' != typeof console && 'function' == typeof console.log)
+			{
+				console.log(msg)
+			}
+		},
+		'_$':function(el)
+		{
+			if('function' == typeof el.constructor && $ == el.constructor)
+			{
+				return el;
+			} else if(el==window) {
+				return $(document.body);
+			} else {
+				return $(el);
+			}
 		}
-	};//JSTP
+	};//SJTP
+	
+	//jQuery integration
 	$.fn.render = SJTP.render;
+	$.fn.make = SJTP.make;
+	$.SJTP = SJTP;
 })(jQuery);
